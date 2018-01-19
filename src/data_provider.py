@@ -1,6 +1,7 @@
 from os import listdir
 import random
-import scipy.ndimage as ndimage 
+import scipy.ndimage as ndimage
+from scipy.misc import imresize
 
 def read_legend(legend_name):
     with open(legend_name) as file:
@@ -40,11 +41,13 @@ def get_random_image_name():
     path = 'datasets/{0}/{1}/{2}.png'.format(problem_set, problem, file_name)
     return path
 
-def get_image_batch(size):
+def get_image_batch(size, imsize=None):
     images = []
     for i in range(size):
         path = get_random_image_name()
         image = ndimage.imread(path, flatten=True)
+        if imsize is not None:
+            image = imresize(image, imsize)
         images.append(image)
     return images
 
