@@ -13,7 +13,7 @@ from src.config import DEFAULT_SEED
 
 _SANDIA_DATASET_HOME = 'datasets/sandia'
 AVAILABLE_MATRIX_TYPES = ('1_layer', '2_layer', '3_layer', 'logic')
-_DATASET_INFO_CSV = os.path.join(_SANDIA_DATASET_HOME, 'data_info.csv')
+_DATASET_INFO_FILENAME = 'data_info.csv'
 
 # Questions are on a 3x3 grid, answers are on a 2x4 grid
 QUESTION_IMAGE_COUNT = 8
@@ -54,7 +54,7 @@ class SandiaDataProvider:
     """
     For iterating over the Sandia dataset
     """
-    def __init__(self, which_set, matrix_types=None, shuffle_order=True, rng=None):
+    def __init__(self, which_set, matrix_types=None, shuffle_order=True, rng=None, dataset_home=_SANDIA_DATASET_HOME):
         """
         :param which_set(str): If 'test', we load the test set, otherwise we load the rest of the data
         :param matrix_types(tuple(str)): There are 4 types of matrices in the dataset - ('1_layer', '2_layer', '3_layer', 'logic')
@@ -75,9 +75,10 @@ class SandiaDataProvider:
             rng = np.random.RandomState(DEFAULT_SEED)
         self.rng = rng
 
-        self.data_info = pd.read_csv(_DATASET_INFO_CSV)
+        self.data_info = pd.read_csv(os.path.join(dataset_home, _DATASET_INFO_FILENAME))
         self.data_info = self.data_info[self.data_info['type'].isin(self.matrix_types)]
         self.shuffle_order = shuffle_order
+        self.dataset_home = dataset_home
 
         if which_set == 'test':
             self.data_info = self.data_info[self.data_info.test]
@@ -103,8 +104,8 @@ class SandiaDataProvider:
         self.targets = np.array(self.data_info.answer)
 
         for i, row in self.data_info.iterrows():
-            q_img_path = os.path.join(_SANDIA_DATASET_HOME, row['type'], row['problem'] + '.png')
-            a_img_path = os.path.join(_SANDIA_DATASET_HOME, row['type'], row['problem'] + '_Answers.png')
+            q_img_path = os.path.join(self.dataset_home, row['type'], row['problem'] + '.png')
+            a_img_path = os.path.join(self.dataset_home, row['type'], row['problem'] + '_Answers.png')
             q_img = ndimage.imread(q_img_path)
             a_img = ndimage.imread(a_img_path)
 
