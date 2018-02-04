@@ -27,3 +27,9 @@ MANIFEST
 
 # Dataset
 datasets/*
+
+# IntelliJ IDEA
+.idea
+
+# Jupyter
+.ipynb_checkpoints
