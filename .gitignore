@@ -32,4 +32,7 @@ datasets/*
 .idea
 
 # Jupyter
-.ipynb_checkpoints
+**/.ipynb_checkpoints
+
+# Models
+models/*
