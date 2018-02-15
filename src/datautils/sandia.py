@@ -4,6 +4,7 @@ import scipy.ndimage as ndimage
 from scipy.misc import imresize
 import numpy as np
 import pandas as pd
+import torch
 
 # TODO: Fix sibling directory imports
 cwd = os.path.dirname(os.path.realpath(__file__))
@@ -30,7 +31,7 @@ SUBIMAGE_SIZE = 100
 IMG_SIZE = 64
 
 
-def get_part_of_image(img, grid_width, part_number):
+def get_part_of_image(img, grid_width, part_number, result_img_size=IMG_SIZE):
     """
     Cut a part of a grid image - used to extract idividual pieces from grid images in the Sandia dataset
     :param img(np.array): The original grid image
@@ -47,14 +48,15 @@ def get_part_of_image(img, grid_width, part_number):
     y_axis_start = int((1 + row) * BORDER_SIZE + row * SUBIMAGE_SIZE)
     y_axis_end = int(y_axis_start + SUBIMAGE_SIZE)
 
-    return imresize(np.copy(img[y_axis_start:y_axis_end, x_axis_start:x_axis_end, 0]), (IMG_SIZE, IMG_SIZE))
+    return imresize(np.copy(img[y_axis_start:y_axis_end, x_axis_start:x_axis_end, 0]), (result_img_size, result_img_size))
 
 
 class SandiaDataProvider:
     """
     For iterating over the Sandia dataset
     """
-    def __init__(self, which_set, matrix_types=None, shuffle_order=True, rng=None, dataset_home=_SANDIA_DATASET_HOME):
+    def __init__(self, which_set, matrix_types=None, shuffle_order=True, rng=None, dataset_home=_SANDIA_DATASET_HOME,
+                 img_size=IMG_SIZE, normalize_mean=None, normalize_sd=None):
         """
         :param which_set(str): If 'test', we load the test set, otherwise we load the rest of the data
         :param matrix_types(tuple(str)): There are 4 types of matrices in the dataset - ('1_layer', '2_layer', '3_layer', 'logic')
@@ -62,6 +64,8 @@ class SandiaDataProvider:
         :param shuffle_order(bool): Should data be shuffled between epochs
         :param rng(np.rand.RandomState): An RNG
         """
+        self.normalize_sd = normalize_sd
+        self.normalize_mean = normalize_mean
         if matrix_types is None:
             self.matrix_types = AVAILABLE_MATRIX_TYPES
         else:
@@ -79,6 +83,7 @@ class SandiaDataProvider:
         self.data_info = self.data_info[self.data_info['type'].isin(self.matrix_types)]
         self.shuffle_order = shuffle_order
         self.dataset_home = dataset_home
+        self.img_size=img_size
 
         if which_set == 'test':
             self.data_info = self.data_info[self.data_info.test]
@@ -87,7 +92,9 @@ class SandiaDataProvider:
 
         # Shuffle and reidex from zero
         self.data_info.reset_index(inplace=True)
-        self._load_data()
+        self._load_data(img_size)
+
+        self.flat_inputs = None
 
     def _shuffle(self):
         """
@@ -96,12 +103,13 @@ class SandiaDataProvider:
         """
         self.data_info = self.data_info.sample(frac=1, random_state=self.rng)
 
-    def _load_data(self):
+    def _load_data(self, img_size=IMG_SIZE):
         """
         Traverse the data_info dataframe, split the images in the dataset and load these into numpy arrays
         """
-        self.inputs = np.empty((len(self.data_info), IMG_SIZE, IMG_SIZE, QUESTION_IMAGE_COUNT + ANSWER_IMAGE_COUNT))
+        self.inputs = np.empty((len(self.data_info), img_size, img_size, QUESTION_IMAGE_COUNT + ANSWER_IMAGE_COUNT))
         self.targets = np.array(self.data_info.answer)
+        self.type_targets = np.array(self.data_info.type_id)
 
         for i, row in self.data_info.iterrows():
             q_img_path = os.path.join(self.dataset_home, row['type'], row['problem'] + '.png')
@@ -110,13 +118,21 @@ class SandiaDataProvider:
             a_img = ndimage.imread(a_img_path)
 
             for qi in range(QUESTION_IMAGE_COUNT):
-                self.inputs[i, :, :, qi] = get_part_of_image(q_img, Q_GRID_WIDTH, qi)
+                self.inputs[i, :, :, qi] = get_part_of_image(q_img, Q_GRID_WIDTH, qi, img_size)
             for ai in range(ANSWER_IMAGE_COUNT):
-                self.inputs[i, :, :, QUESTION_IMAGE_COUNT + ai] = get_part_of_image(a_img, A_GRID_WIDTH, ai)
+                self.inputs[i, :, :, QUESTION_IMAGE_COUNT + ai] = get_part_of_image(a_img, A_GRID_WIDTH, ai, img_size)
 
             self.targets[i] = row['answer']
 
-    def get_batch_iterator(self, batch_size):
+        if self.normalize_mean is None:
+            self.normalize_mean = self.inputs.mean()
+        if self.normalize_sd is None:
+            self.normalize_sd = np.sqrt(self.inputs.var())
+
+        # Normalize inputs - zero mean, unit variance
+        self.inputs = (self.inputs - self.normalize_mean) / self.normalize_sd
+
+    def get_batch_iterator(self, batch_size, type_targets=False):
         """
         Returns a generator object that yields batches (inputs, targets), iterating through the whole dataset
         :param batch_size: The number of samples in each batch
@@ -127,14 +143,34 @@ class SandiaDataProvider:
         num_batches = int(np.ceil(len(self.data_info) / batch_size))
 
         # Assign each example to a batch
-        self.data_info.batch = np.arange(len(self.data_info)) % num_batches
+        self.data_info.loc[:, 'batch'] = np.arange(len(self.data_info)) % num_batches
 
         for bi in range(num_batches):
             batch_indices = self.data_info[self.data_info.batch == bi].index.values
-            inputs = self.inputs[batch_indices]
-            targets = self.targets[batch_indices]
-
+            if type_targets:
+                # Only return question images
+                inputs = self.inputs[batch_indices][:, :, :, :QUESTION_IMAGE_COUNT]
+                targets = self.type_targets[batch_indices]
+            else:
+                inputs = self.inputs[batch_indices]
+                targets = self.targets[batch_indices]
             yield (inputs, targets)
+
+    def get_image_batch_iterator(self, batch_size, img_as_vector=False):
+        if self.flat_inputs is None:
+            self.flat_inputs = self.inputs.transpose(3,0,1,2).reshape(-1, 1, self.img_size, self.img_size)
+
+        if self.shuffle_order:
+            np.random.shuffle(self.flat_inputs)
+
+        num_batches = int(np.ceil(len(self.flat_inputs) / batch_size))
+
+        for bi in range(num_batches):
+            if img_as_vector:
+                yield torch.from_numpy(self.flat_inputs[batch_size * bi: batch_size * (bi + 1)].reshape(
+                    -1, self.img_size ** 2).astype('float32')), None
+            else:
+                yield torch.from_numpy(self.flat_inputs[batch_size * bi: batch_size * (bi + 1)].astype('float32')), None
 
     def get_bagging_batch_iterator(self, batch_size):
         """
