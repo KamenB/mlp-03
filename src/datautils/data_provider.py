@@ -60,7 +60,7 @@ def get_random_image_name(dataset_path):
     path = '{0}/{1}/{2}/{3}.png'.format(dataset_path, problem_set, problem, file_name)
     return path
 
-def get_image_batch(size, imsize=None, dataset_path):
+def get_image_batch(size, dataset_path, imsize=None):
     images = []
     image_names = get_random_image_name_list(dataset_path)
     if size > len(image_names):
