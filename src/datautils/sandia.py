@@ -108,7 +108,8 @@ class SandiaDataProvider:
         Traverse the data_info dataframe, split the images in the dataset and load these into numpy arrays
         """
         self.inputs = np.empty((len(self.data_info), img_size, img_size, QUESTION_IMAGE_COUNT + ANSWER_IMAGE_COUNT))
-        self.targets = np.array(self.data_info.answer)
+        # Reindex so that answers are zero-based (take 1)
+        self.targets = np.array(self.data_info.answer) - 1
         self.type_targets = np.array(self.data_info.type_id)
 
         for i, row in self.data_info.iterrows():
