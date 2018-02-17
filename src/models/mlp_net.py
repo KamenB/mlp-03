@@ -8,13 +8,14 @@ from torch.autograd import Variable
 #inputs: (input_dimension, dutput_dimension, hidden_layers_width, number_of_hidden_layers)
 
 class Net(nn.Module):
-    def __init__(self, D_in, D_out, layer_size,hidden_n):
+    def __init__(self, D_in, D_out,hidden_n, hidden_s):
         super(Net, self).__init__()  
         
         self.hidden_layers = hidden_n - 1
+        self.hidden_s = hidden_s
         
-        self.first_layer = torch.nn.Linear(D_in,hidden_s)
-        self.middle_layers = nn.ModuleList();
+        self.first_layer = torch.nn.Linear(D_in, hidden_s)
+        self.middle_layers = nn.ModuleList()
         for i in range(self.hidden_layers):
             self.middle_layers.append(torch.nn.Linear(hidden_s, hidden_s))
         self.final_layer = torch.nn.Linear(hidden_s, D_out)
