@@ -29,8 +29,9 @@ def pca_zm_proj(X, K=None):
 
 
 class PCA_autoencoder:
-    def __init__(self):
+    def __init__(self, K=None):
         self.V = None
+        self.K = K
 
     def train(self, data):
         """
@@ -40,7 +41,7 @@ class PCA_autoencoder:
         """
         self.mu = np.mean(data, axis=0)
         data_centered = data - self.mu
-        self.V = pca_zm_proj(data_centered)
+        self.V = pca_zm_proj(data_centered, self.K)
 
     def encode(self, data, embedding_size=None):
         """
