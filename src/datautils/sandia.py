@@ -131,6 +131,9 @@ class SandiaDataProvider:
         # Normalize inputs - zero mean, unit variance
         self.inputs = (self.inputs - self.normalize_mean) / self.normalize_sd
 
+    def size(self):
+        return len(self.data_info)
+
     def get_batch_iterator(self, batch_size, type_targets=False):
         """
         Returns a generator object that yields batches (inputs, targets), iterating through the whole dataset
@@ -142,7 +145,7 @@ class SandiaDataProvider:
         num_batches = int(np.ceil(len(self.data_info) / batch_size))
 
         # Assign each example to a batch
-        self.data_info.loc[:, 'batch'] = np.arange(len(self.data_info)) % num_batches
+        self.data_info.loc[:, 'batch'] = np.arange(self.size()) % num_batches
 
         for bi in range(num_batches):
             batch_indices = self.data_info[self.data_info.batch == bi].index.values
@@ -177,10 +180,10 @@ class SandiaDataProvider:
         each batch
         :param batch_size: The number of samples in each batch
         """
-        num_batches = int(np.ceil(len(self.data_info) / batch_size))
+        num_batches = int(np.ceil(self.size() / batch_size))
 
         for bi in range(num_batches):
-            batch_indices = np.random.randint(0, len(self.data_info), batch_size)
+            batch_indices = np.random.randint(0, self.size(), batch_size)
             inputs = self.inputs[batch_indices]
             targets = self.targets[batch_indices]
 
