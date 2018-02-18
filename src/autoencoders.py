@@ -1,4 +1,12 @@
 import numpy as np
+from torch import nn
+
+ACTIVATION_MAP = {
+    'relu': nn.ReLU,
+    'sigmoid': nn.Sigmoid,
+    'tanh': nn.Tanh
+}
+
 
 def pca_zm_proj(X, K=None):
     """return PCA projection matrix for zero mean data
@@ -51,3 +59,44 @@ class PCA_autoencoder:
         """
         return encoded @ self.V[:, :encoded.shape[1]].T + self.mu
 
+
+class MLP_autoencoder(nn.Module):
+    """
+    A Feedforward NN autoencoder
+    """
+    def __init__(self, encoder_sizes, decoder_sizes, activation, final_activation):
+        """
+        :param encoder_sizes(list(int)): A list of integers for the encoder layer sizes. The first entry should be the
+        size of the input vectors and the last should be the same as the first one in the decoder_sizes
+        :param decoder_sizes(list(int)): A list of integers for the decoder layer sizes. The last entry should be the
+        size of the input vectors and the first should be the same as the last one in the encoder_sizes
+        :param activation(str): The nonlinearity to be used after each layer.
+        See src.autoencoders.ACTIVATION_MAP for available choices
+        :param final_activation(str): The nonlinearity to be used after the last decoder layer.
+        See src.autoencoders.ACTIVATION_MAP for available choices
+        """
+        super(MLP_autoencoder, self).__init__()
+        encoder_arch, decoder_arch = [], []
+        for i in range(len(encoder_sizes) - 1):
+            encoder_arch.append(nn.Linear(encoder_sizes[i], encoder_sizes[i + 1]))
+            encoder_arch.append(ACTIVATION_MAP[activation]())
+        encoder_arch = encoder_arch[:-1]
+        for i in range(len(decoder_sizes) - 1):
+            decoder_arch.append(nn.Linear(decoder_sizes[i], decoder_sizes[i + 1]))
+            decoder_arch.append(ACTIVATION_MAP[activation]())
+        # Remove last added activation and substitute with final one for the decoder
+        decoder_arch = decoder_arch[:-1]
+        decoder_arch.append(ACTIVATION_MAP[final_activation]())
+
+        self.encoder = nn.Sequential(*encoder_arch)
+        self.decoder = nn.Sequential(*decoder_arch)
+
+    def forward(self, inputs):
+        """
+        A forward pass of the autoencoder
+        :param inputs(torch.autograd.Variable): An NxD matrix of inputs
+        :return(tuple(Variable, Variable): A pair of encodings and reconstructed images
+        """
+        encoded = self.encoder(inputs)
+        decoded = self.decoder(encoded)
+        return encoded, decoded
