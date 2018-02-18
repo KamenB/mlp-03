@@ -123,8 +123,6 @@ class SandiaDataProvider:
             for ai in range(ANSWER_IMAGE_COUNT):
                 self.inputs[i, :, :, QUESTION_IMAGE_COUNT + ai] = get_part_of_image(a_img, A_GRID_WIDTH, ai, img_size)
 
-            self.targets[i] = row['answer']
-
         if self.normalize_mean is None:
             self.normalize_mean = self.inputs.mean()
         if self.normalize_sd is None:
