@@ -123,8 +123,6 @@ class SandiaDataProvider:
             for ai in range(ANSWER_IMAGE_COUNT):
                 self.inputs[i, :, :, QUESTION_IMAGE_COUNT + ai] = get_part_of_image(a_img, A_GRID_WIDTH, ai, img_size)
 
-            self.targets[i] = row['answer']
-
         if self.normalize_mean is None:
             self.normalize_mean = self.inputs.mean()
         if self.normalize_sd is None:
@@ -132,6 +130,9 @@ class SandiaDataProvider:
 
         # Normalize inputs - zero mean, unit variance
         self.inputs = (self.inputs - self.normalize_mean) / self.normalize_sd
+
+    def size(self):
+        return len(self.data_info)
 
     def get_batch_iterator(self, batch_size, type_targets=False):
         """
@@ -144,7 +145,7 @@ class SandiaDataProvider:
         num_batches = int(np.ceil(len(self.data_info) / batch_size))
 
         # Assign each example to a batch
-        self.data_info.loc[:, 'batch'] = np.arange(len(self.data_info)) % num_batches
+        self.data_info.loc[:, 'batch'] = np.arange(self.size()) % num_batches
 
         for bi in range(num_batches):
             batch_indices = self.data_info[self.data_info.batch == bi].index.values
@@ -179,10 +180,10 @@ class SandiaDataProvider:
         each batch
         :param batch_size: The number of samples in each batch
         """
-        num_batches = int(np.ceil(len(self.data_info) / batch_size))
+        num_batches = int(np.ceil(self.size() / batch_size))
 
         for bi in range(num_batches):
-            batch_indices = np.random.randint(0, len(self.data_info), batch_size)
+            batch_indices = np.random.randint(0, self.size(), batch_size)
             inputs = self.inputs[batch_indices]
             targets = self.targets[batch_indices]
 
