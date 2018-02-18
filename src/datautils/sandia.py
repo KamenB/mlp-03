@@ -73,7 +73,7 @@ class SandiaDataProvider:
                 if mt not in AVAILABLE_MATRIX_TYPES:
                     raise ValueError('Unrecognized matrix type {0}. Available types are {1}'.format(
                         mt, str(AVAILABLE_MATRIX_TYPES)))
-            self.matrix_types = AVAILABLE_MATRIX_TYPES
+            self.matrix_types = matrix_types
 
         if rng is None:
             rng = np.random.RandomState(DEFAULT_SEED)
