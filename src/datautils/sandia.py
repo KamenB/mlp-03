@@ -87,8 +87,13 @@ class SandiaDataProvider:
 
         if which_set == 'test':
             self.data_info = self.data_info[self.data_info.test]
-        else:
-            self.data_info = self.data_info[~self.data_info.test]
+        elif which_set == 'valid':
+            self.data_info = self.data_info[self.data_info.valid]
+        elif which_set == 'train':
+            self.data_info = self.data_info[(~self.data_info.valid) & (~self.data_info.test)]
+        elif which_set is not None:
+            raise ValueError(f'Invalid value for which_set: {which_set} - must be one of [test, valid, train, None]')
+
 
         # Shuffle and reidex from zero
         self.data_info.reset_index(inplace=True)
