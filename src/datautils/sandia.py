@@ -163,9 +163,9 @@ class SandiaDataProvider:
                 targets = self.targets[batch_indices]
 
             if transpose_inputs:
-                inputs = inputs.transpose(3, 0, 1, 2)
+                inputs = inputs.transpose(0, 3, 1, 2)
                 if separate_inputs:
-                    inputs = inputs[:QUESTION_IMAGE_COUNT], inputs[QUESTION_IMAGE_COUNT:]
+                    inputs = inputs[:, QUESTION_IMAGE_COUNT, ...], inputs[:, QUESTION_IMAGE_COUNT:, ...]
             else:
                 if separate_inputs:
                     inputs = inputs[..., :QUESTION_IMAGE_COUNT], inputs[..., QUESTION_IMAGE_COUNT:]
