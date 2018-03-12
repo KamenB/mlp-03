@@ -36,3 +36,6 @@ datasets/*
 
 # Models
 models/*
+
+# Log files
+out/log
