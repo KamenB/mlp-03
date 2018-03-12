@@ -1,5 +1,7 @@
 import numpy as np
 from torch import nn
+import torch.nn.functional as F
+import torch
 
 ACTIVATION_MAP = {
     'relu': nn.ReLU,
@@ -101,3 +103,117 @@ class MLP_autoencoder(nn.Module):
         encoded = self.encoder(inputs)
         decoded = self.decoder(encoded)
         return encoded, decoded
+
+class Conv2DAutoencoder(nn.Module):
+    def __init__(self, latent_size):
+        super(Conv2DAutoencoder, self).__init__()
+        self.latent_size = latent_size
+        self.encoder = nn.Sequential(
+            nn.Conv2d(1, 16, 3, stride=3, padding=1),  # b, 16, 10, 10
+            nn.ReLU(True),
+            nn.MaxPool2d(2, stride=2),  # b, 16, 5, 5
+            nn.Conv2d(16, 8, 3, stride=2, padding=1),  # b, 8, 3, 3
+            nn.ReLU(True),
+            nn.MaxPool2d(2, stride=1),  # b, 8, 2, 2
+            nn.Conv2d(8, self.latent_size, 2),  # b, latent_size, 1, 1
+            nn.ReLU(True)
+        )
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(self.latent_size, 8, 2), # b, 8, 2, 2
+            nn.ReLU(True),
+            nn.ConvTranspose2d(8, 16, 3, stride=2),  # b, 16, 5, 5
+            nn.ReLU(True),
+            nn.ConvTranspose2d(16, 8, 5, stride=3, padding=1),  # b, 8, 15, 15
+            nn.ReLU(True),
+            nn.ConvTranspose2d(8, 1, 2, stride=2, padding=1),  # b, 1, 28, 28
+            nn.Tanh()
+        )
+
+    def forward(self, input_vector):
+        latent_vector = self.encoder(input_vector)
+        
+        # Get reconstruction
+        decoded = self.decoder(latent_vector)
+        
+        # Return reconstruction and latent_vector 
+        return decoded, latent_vector
+
+    def set_frozen(self, is_frozen):
+        for param in self.parameters():
+            param.requires_grad = not is_frozen
+
+    def is_frozen(self):
+        return not next(self.parameters()).requires_grad
+
+class PCAAutoencoder:
+    def __init__(self, K=None):
+        self.V = None
+        self.K = K
+
+    def train(self, data):
+        """
+        Obtains and stores the mean of each feature vector and the PCA projection matrix
+        :param data(np.array): NxD np array, where N is the number of examples, D is the number of features
+        :return: None
+        """
+        self.mu = np.mean(data, axis=0)
+        data_centered = data - self.mu
+        self.V = pca_zm_proj(data_centered, self.K)
+
+    def forward(self, input_vector):
+
+        num_batch, num_channels, im_width, im_height = input_vector.size()
+        # Flatten for encoding
+        input_vector = input_vector.view(num_batch, im_width * im_height)
+
+        latent_vector = self.encoder(input_vector)
+        
+        # Get reconstruction
+        decoded = self.decoder(latent_vector)
+        
+        # Return to original shape
+        decoded = decoded.view(num_batch, num_channels, im_width, im_height)
+
+        # Return reconstruction and latent_vector 
+        return decoded, latent_vector
+
+    def encoder(self, data, embedding_size=None):
+        """
+        :param data(torch Tensor): NxD where D is the number of features
+        :param embedding_size(int): The desired length for the embedding vector
+        :return(torch Tensor): Nxembedding_size - each row is the encoded version of the input row
+        """
+
+        # TODO: Implement PCA with PyTorch instead of Numpy
+        data = data.cpu().data.numpy()
+
+        if embedding_size is None:
+            embedding_size = self.V.shape[1]
+        latent_vector = (data - self.mu) @ self.V[:, :embedding_size]
+
+        # Make torch variable
+        latent_vector = torch.autograd.Variable(torch.from_numpy(latent_vector).float())
+        return latent_vector
+
+    def decoder(self, encoded):
+        """
+        :param encoded(torch Tensor): NxK - each row is an encoded datapoint
+        :return(torch Tensor): NxD - The reconstructed versions of the input
+        """
+
+        encoded = encoded.cpu().data.numpy()        
+
+        decoded = encoded @ self.V[:, :encoded.shape[1]].T + self.mu
+
+        # Make torch variable
+        decoded = torch.autograd.Variable(torch.from_numpy(decoded).float())
+        return decoded        
+
+    def set_frozen(self, frozen):
+        pass
+
+    def is_frozen(self):
+        return True
+
+    def __call__(self, *args, **kwargs):
+        return self.forward(*args, **kwargs)
