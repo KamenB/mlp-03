@@ -166,7 +166,7 @@ class SandiaDataProvider:
                 inputs = inputs.transpose(3, 0, 1, 2)
             if separate_inputs:
                 inputs = inputs[..., :QUESTION_IMAGE_COUNT], inputs[..., QUESTION_IMAGE_COUNT:]
-            return  inputs, targets
+            yield inputs, targets
 
     def get_image_batch_iterator(self, batch_size, img_as_vector=False):
         if self.flat_inputs is None:
