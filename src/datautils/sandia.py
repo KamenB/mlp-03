@@ -139,7 +139,7 @@ class SandiaDataProvider:
     def size(self):
         return len(self.data_info)
 
-    def get_batch_iterator(self, batch_size, type_targets=False, transpose_inputs=False):
+    def get_batch_iterator(self, batch_size, type_targets=False, transpose_inputs=False, separate_inputs=False):
         """
         Returns a generator object that yields batches (inputs, targets), iterating through the whole dataset
         :param batch_size: The number of samples in each batch
@@ -161,11 +161,15 @@ class SandiaDataProvider:
             else:
                 inputs = self.inputs[batch_indices]
                 targets = self.targets[batch_indices]
-            if transpose_inputs:
-                yield (inputs.transpose(3, 0, 1, 2), targets)
-            else:
-                yield (inputs, targets)
 
+            if transpose_inputs:
+                inputs = inputs.transpose(3, 0, 1, 2)
+                if separate_inputs:
+                    inputs = inputs[:QUESTION_IMAGE_COUNT], inputs[QUESTION_IMAGE_COUNT:]
+            else:
+                if separate_inputs:
+                    inputs = inputs[..., :QUESTION_IMAGE_COUNT], inputs[..., QUESTION_IMAGE_COUNT:]
+            yield inputs, targets
 
     def get_image_batch_iterator(self, batch_size, img_as_vector=False):
         if self.flat_inputs is None:
