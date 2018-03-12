@@ -147,7 +147,8 @@ class SandiaDataProvider:
         if self.shuffle_order:
             self._shuffle()
 
-        num_batches = int(np.ceil(len(self.data_info) / batch_size))
+        # Truncate data - if we have 84 datapoints and a batch_size of 10, we will return 8 batches of size 10
+        num_batches = int(np.floor(len(self.data_info) / batch_size))
 
         # Assign each example to a batch
         self.data_info.loc[:, 'batch'] = np.arange(self.size()) % num_batches
