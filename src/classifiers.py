@@ -3,8 +3,20 @@ from torch import nn
 class PairwiseClassifier(nn.Module):
     def __init__(self, latent_size):
         super(PairwiseClassifier, self).__init__()
-        self.input_transform = nn.Linear(latent_size, 1)
-        self.choice_transform = nn.Linear(latent_size, 1)
+        self.input_transform = nn.Sequential(
+            nn.Linear(latent_size, 30),
+            nn.ReLU(True),
+            nn.Linear(30, 10),
+            nn.ReLU(True),
+            nn.Linear(10, 1)
+        )
+        self.choice_transform = nn.Sequential(
+            nn.Linear(latent_size, 30),
+            nn.ReLU(True),
+            nn.Linear(30, 10),
+            nn.ReLU(True),
+            nn.Linear(10, 1)
+        )
     
     def forward(self, latent_prediction, latent_choices):
         '''
@@ -12,7 +24,7 @@ class PairwiseClassifier(nn.Module):
             latent_prediciton   - num_batchx1xlatent_size
             latent_choices      - num_batchx8xlatent_size
         returns:
-            log_probabilities   - 8x1
+            log_probabilities   - num_batchx8
         '''
         # Generate a vector of size num_batch - representing the bias from the prediction
         prediction_bias = self.input_transform(latent_prediction).squeeze()
