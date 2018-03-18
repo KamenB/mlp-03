@@ -7,6 +7,13 @@ class PairwiseClassifier(nn.Module):
         self.choice_transform = nn.Linear(latent_size, 1)
     
     def forward(self, latent_prediction, latent_choices):
+        '''
+        input:
+            latent_prediciton   - num_batchx1xlatent_size
+            latent_choices      - num_batchx8xlatent_size
+        returns:
+            log_probabilities   - 8x1
+        '''
         # Generate a vector of size num_batch - representing the bias from the prediction
         prediction_bias = self.input_transform(latent_prediction).squeeze()
         # Generate a matrix of size num_batch, num_choices - one value for each choice

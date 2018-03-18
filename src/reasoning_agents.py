@@ -7,6 +7,12 @@ class FFNReasoningAgent(nn.Module):
         self.affine = nn.Linear(latent_size*8, latent_size)
         
     def forward(self, latent_vectors):
+        '''
+        input:
+            latent_vectors      - num_batchx8xlatent_size
+        returns
+            latent_prediction   - num_batchx1xlatent_size
+        '''
         # Reshape num_batch, num_im, latent_size -> num_batch, num_im * latent_size
         num_batch, num_im, latent_size = latent_vectors.size()
         reshaped_latent = latent_vectors.view(num_batch, num_im * latent_size)

@@ -9,24 +9,25 @@ def _get_loss(q_vectors, decoded_q_vectors, logits, target, autoencoder_is_froze
         loss += F.mse_loss(decoded_q_vectors, q_vectors)
     return loss
         
-def _step(model, optimizer, loader, use_cuda, epoch_idx, log_interval=50):
+def _step(model, optimizer, loader, use_cuda, epoch_idx, train, log_interval=50):
     total_loss = 0
     for batch_idx, ((q_vectors, a_vectors), target) in enumerate(loader):
         q_vectors, a_vectors, target = make_vars([q_vectors, a_vectors, target], ['float', 'float', 'long'], use_cuda=use_cuda)
         optimizer.zero_grad()
         logits, _, decoded_q_vectors, _ = model(q_vectors, a_vectors)
-        # Prediction part of the loss
         loss = _get_loss(q_vectors, decoded_q_vectors, logits, target, model.autoencoder.is_frozen())
-        loss.backward()
-        optimizer.step()
+        # Only update weights if training
+        if train:
+            loss.backward()
+            optimizer.step()
         total_loss += loss.data[0]
         if batch_idx % log_interval == 0:
-            print('Train Epoch: {0} Loss: {1:.6f}'.format(epoch_idx, loss.data[0]))
+            print('{0}: Epoch: {1} Loss: {2:.6f}'.format("Train" if train else "Validation", epoch_idx, loss.data[0]))
     return total_loss
 
 def _epoch(model, optimizer, train_loader, val_loader, use_cuda, epoch_idx):
-    train_loss  = _step(model, optimizer, train_loader, use_cuda, epoch_idx)
-    val_loss    = _step(model, optimizer, val_loader, use_cuda, epoch_idx)
+    train_loss  = _step(model, optimizer, train_loader, use_cuda, epoch_idx, train=True)
+    val_loss    = _step(model, optimizer, val_loader, use_cuda, epoch_idx, train=False)
     
     return train_loss, val_loss
 
