@@ -148,13 +148,16 @@ class SandiaDataProvider:
             self._shuffle()
 
         # Truncate data - if we have 84 datapoints and a batch_size of 10, we will return 8 batches of size 10
+        data_info_copy = self.data_info.copy(deep=True)
+        if len(self.data_info) % batch_size > 0:
+            data_info_copy = data_info_copy.iloc[:-(len(self.data_info) % batch_size)]
         num_batches = int(np.floor(len(self.data_info) / batch_size))
 
         # Assign each example to a batch
-        self.data_info.loc[:, 'batch'] = np.arange(self.size()) % num_batches
+        data_info_copy.loc[:, 'batch'] = np.arange(len(data_info_copy)) % num_batches
 
         for bi in range(num_batches):
-            batch_indices = self.data_info[self.data_info.batch == bi].index.values
+            batch_indices = data_info_copy[data_info_copy.batch == bi].index.values
             if type_targets:
                 # Only return question images
                 inputs = self.inputs[batch_indices][:, :, :, :QUESTION_IMAGE_COUNT]
