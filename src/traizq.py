@@ -1,11 +1,12 @@
 import torch.nn as nn
 
 class TRAIZQ(nn.Module):
-    def __init__(self, autoencoder, reasoning_agent, classifier):
+    def __init__(self, autoencoder, reasoning_agent, classifier, use_classifier=True):
         super(TRAIZQ, self).__init__()
         self.autoencoder = autoencoder
         self.reasoning_agent = reasoning_agent
         self.classifier = classifier
+        self.use_classifier = use_classifier
         
     def forward(self, inputs, choices):
         # inputs and choices are num_batch, num_im, im_width, im_height
@@ -28,7 +29,10 @@ class TRAIZQ(nn.Module):
         # Get latent prediction
         latent_prediction = self.reasoning_agent(latent_inputs)
         
-        # Predict label by computing distance between each pair
-        logits = self.classifier(latent_prediction, latent_choices)
-        
-        return logits, latent_prediction, decoded_inputs, decoded_choices
+        if self.use_classifier:
+            # Predict label by computing distance between each pair
+            logits = self.classifier(latent_prediction, latent_choices)
+        else:
+            logits = None
+
+        return logits, latent_prediction, decoded_inputs, decoded_choices, latent_choices
