@@ -4,20 +4,20 @@ class PairwiseClassifier(nn.Module):
     def __init__(self, latent_size):
         super(PairwiseClassifier, self).__init__()
         self.input_transform = nn.Sequential(
-            nn.Linear(latent_size, 30),
-            nn.ReLU(True),
-            nn.Linear(30, 10),
-            nn.ReLU(True),
+            nn.Linear(latent_size, 50),
+            nn.PReLU(),
+            nn.Linear(50, 10),
+            nn.PReLU(),
             nn.Linear(10, 1)
         )
         self.choice_transform = nn.Sequential(
-            nn.Linear(latent_size, 30),
-            nn.ReLU(True),
-            nn.Linear(30, 10),
-            nn.ReLU(True),
+            nn.Linear(latent_size, 50),
+            nn.PReLU(),
+            nn.Linear(50, 10),
+            nn.PReLU(),
             nn.Linear(10, 1)
         )
-    
+
     def forward(self, latent_prediction, latent_choices):
         '''
         input:
