@@ -4,10 +4,11 @@ from torch.autograd import Variable
 
 
 class FFNReasoningAgent(nn.Module):
-    def __init__(self, encoding_size, hidden_size, num_hidden, num_images=8):
+    def __init__(self, encoding_size, hidden_size, num_hidden, nonlinearity='relu', num_images=8):
         super(FFNReasoningAgent, self).__init__()
         self.hidden_layers = num_hidden - 1
         self.hidden_size = hidden_size
+        self.nonlinearity = nonlinearity
 
         self.first_layer = torch.nn.Linear(num_images * encoding_size, hidden_size)
         self.middle_layers = nn.ModuleList()
@@ -25,13 +26,18 @@ class FFNReasoningAgent(nn.Module):
         # Reshape batch_size, num_im, latent_size -> batch_size, num_im * latent_size and pass through first layer
         batch_size, num_im, latent_size = latent_vectors.size()
 
-        h_relu = self.first_layer(latent_vectors.view(batch_size, -1)).clamp(min=0)
+        h_i = self.first_layer(latent_vectors.view(batch_size, -1))
+
+        if self.nonlinearity is not None:
+            h_i = h_i.clamp(min=0)
 
         # Pass through middle layers
         for i in range(self.hidden_layers):
-            h_relu = self.middle_layers[i](h_relu).clamp(min=0)
+            h_i = self.middle_layers[i](h_i)
+            if self.nonlinearity is not None:
+                h_i = h_i.clamp(min=0)
 
-        y_pred = self.final_layer(h_relu)
+        y_pred = self.final_layer(h_i)
 
         return y_pred.view(batch_size, 1, latent_size)
 
