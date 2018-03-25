@@ -1,8 +1,8 @@
 import torch.nn as nn
 
-class TRAIZQ(nn.Module):
+class UTIQ(nn.Module):
     def __init__(self, autoencoder, reasoning_agent, classifier, use_classifier=True):
-        super(TRAIZQ, self).__init__()
+        super(UTIQ, self).__init__()
         self.autoencoder = autoencoder
         self.reasoning_agent = reasoning_agent
         self.classifier = classifier
