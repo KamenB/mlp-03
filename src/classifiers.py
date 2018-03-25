@@ -1,22 +1,60 @@
 from torch import nn
 
 class PairwiseClassifier(nn.Module):
-    def __init__(self, latent_size):
+    def __init__(self, latent_size, num_layers = 3, layer_size = 50, last_layer_size = 10):
         super(PairwiseClassifier, self).__init__()
-        self.input_transform = nn.Sequential(
-            nn.Linear(latent_size, 50),
-            nn.PReLU(),
-            nn.Linear(50, 10),
-            nn.PReLU(),
-            nn.Linear(10, 1)
-        )
-        self.choice_transform = nn.Sequential(
-            nn.Linear(latent_size, 50),
-            nn.PReLU(),
-            nn.Linear(50, 10),
-            nn.PReLU(),
-            nn.Linear(10, 1)
-        )
+
+        modules = []
+        self.last_layer = last_layer_size
+        self.num_layers = num_layers
+            for i in range(num_layers):
+                if i == 0:
+                    modules.append(nn.Linear(latent_size, layer_size))
+                    modules.append(nn.PReLU())
+                elif i == nb_layers-1:
+                    modules.append(nn.Linear(layer_size, output_dim))
+                # elif i == nb_layers-2 and num_layers >= 3:
+                #     modules.append(nn.Linear(layer_size, last_layer))
+                #     modules.append(nn.PReLU())
+                else:
+                    fc.append(nn.Linear(layer_size, layer_size))
+                    modules.append(nn.PReLU())
+
+        self.input_transform = nn.Sequential(*modules)
+
+        # self.input_transform = nn.Sequential(
+        #     nn.Linear(latent_size, 50),
+        #     nn.PReLU(),
+        #     nn.Linear(50, 10),
+        #     nn.PReLU(),
+        #     nn.Linear(10, 1)
+        # )
+
+        modules = []
+        self.last_layer = last_layer_size
+        self.num_layers = num_layers
+            for i in range(num_layers):
+                if i == 0:
+                    modules.append(nn.Linear(latent_size, layer_size))
+                    modules.append(nn.PReLU())
+                elif i == nb_layers-1:
+                    modules.append(nn.Linear(layer_size, output_dim))
+                # elif i == nb_layers-2 and num_layers >= 3:
+                #     modules.append(nn.Linear(layer_size, last_layer))
+                #     modules.append(nn.PReLU())
+                else:
+                    fc.append(nn.Linear(layer_size, layer_size))
+                    modules.append(nn.PReLU())
+        self.choice_transform = nn.Sequential(*modules)
+
+
+        # self.choice_transform = nn.Sequential(
+        #     nn.Linear(latent_size, 50),
+        #     nn.PReLU(),
+        #     nn.Linear(50, 10),
+        #     nn.PReLU(),
+        #     nn.Linear(10, 1)
+        # )
 
     def forward(self, latent_prediction, latent_choices):
         '''
