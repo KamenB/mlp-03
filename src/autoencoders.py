@@ -104,29 +104,93 @@ class MLP_autoencoder(nn.Module):
         decoded = self.decoder(encoded)
         return encoded, decoded
 
+class FeedforwardAutoencoder(nn.Module):
+    def __init__(self, latent_size):
+        super(LinearAutoencoder, self).__init__()
+        self.latent_size = latent_size
+        h = [28*28, 500, 400, 300, self.latent_size]
+        self.encoder = nn.Sequential(
+            # Input is (28*28)
+            nn.Linear(h[0], h[1]),
+            nn.ReLU(True),
+
+            nn.Linear(h[1], h[2]),
+            nn.ReLU(True),
+
+            nn.Linear(h[2], h[3]),
+            nn.ReLU(True),     
+
+            nn.Linear(h[3], h[4])
+        )
+        self.decoder = nn.Sequential(
+            # Input is (latent_size)
+            nn.Linear(h[4], h[3]),
+            nn.ReLU(True),
+
+            nn.Linear(h[3], h[2]),
+            nn.ReLU(True),
+
+            nn.Linear(h[2], h[1]),
+            nn.ReLU(True),
+
+            nn.Linear(h[1], h[0])
+        )
+
+    def forward(self, input_vector):
+        # Input is num_im x 1 x im_width x im_height
+        num_im, _, im_width, im_height = input_vector.size()
+
+        transformed_input = input_vector.view(-1, im_width * im_height)
+
+        latent_vector = self.encoder(transformed_input)
+        
+        # Get reconstruction
+        decoded = self.decoder(latent_vector)
+
+        transformed_decoded = decoded.view(num_im, 1, im_width, im_height)
+        
+        # Return reconstruction and latent_vector 
+        return transformed_decoded, latent_vector
+
+    def set_frozen(self, is_frozen):
+        for param in self.parameters():
+            param.requires_grad = not is_frozen
+
+    def is_frozen(self):
+        return not next(self.parameters()).requires_grad
+
 class Conv2DAutoencoder(nn.Module):
     def __init__(self, latent_size):
         super(Conv2DAutoencoder, self).__init__()
         self.latent_size = latent_size
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 16, 3, stride=3, padding=1),  # b, 16, 10, 10
+            # Input is 1x28x28
+            nn.Conv2d(in_channels=1, out_channels=16, kernel_size=3, stride=3, padding=1),  # b, 16, 10, 10
             nn.ReLU(True),
-            nn.MaxPool2d(2, stride=2),  # b, 16, 5, 5
-            nn.Conv2d(16, 8, 3, stride=2, padding=1),  # b, 8, 3, 3
+            
+            # nn.MaxPool2d(2, stride=2),  # b, 16, 5, 5
+            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=2, stride=2),  # b, 16, 5, 5
             nn.ReLU(True),
-            nn.MaxPool2d(2, stride=1),  # b, 8, 2, 2
-            nn.Conv2d(8, self.latent_size, 2),  # b, latent_size, 1, 1
+            
+            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=2, padding=1),  # b, 32, 3, 3
+            nn.ReLU(True),
+            
+            # nn.MaxPool2d(2, stride=1),  # b, 32, 2, 2
+            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=2, stride=1),  # b, 32, 2, 2
+            nn.ReLU(True),
+
+            nn.Conv2d(in_channels=32, out_channels=self.latent_size, kernel_size=2),  # b, latent_size, 1, 1
             nn.ReLU(True)
         )
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(self.latent_size, 8, 2), # b, 8, 2, 2
+            nn.ConvTranspose2d(in_channels=self.latent_size, out_channels=32, kernel_size=2), # b, 32, 2, 2
             nn.ReLU(True),
-            nn.ConvTranspose2d(8, 16, 3, stride=2),  # b, 16, 5, 5
+            nn.ConvTranspose2d(in_channels=32, out_channels=16, kernel_size=3, stride=2),  # b, 16, 5, 5
             nn.ReLU(True),
-            nn.ConvTranspose2d(16, 8, 5, stride=3, padding=1),  # b, 8, 15, 15
+            nn.ConvTranspose2d(in_channels=16, out_channels=8, kernel_size=5, stride=3, padding=1),  # b, 8, 15, 15
             nn.ReLU(True),
-            nn.ConvTranspose2d(8, 1, 2, stride=2, padding=1),  # b, 1, 28, 28
-            nn.Tanh()
+            nn.ConvTranspose2d(in_channels=8, out_channels=1, kernel_size=2, stride=2, padding=1),  # b, 1, 28, 28
+            # nn.Tanh()
         )
 
     def forward(self, input_vector):
