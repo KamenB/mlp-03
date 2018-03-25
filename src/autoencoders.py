@@ -106,7 +106,7 @@ class MLP_autoencoder(nn.Module):
 
 class FeedforwardAutoencoder(nn.Module):
     def __init__(self, latent_size):
-        super(LinearAutoencoder, self).__init__()
+        super(FeedforwardAutoencoder, self).__init__()
         self.latent_size = latent_size
         h = [28*28, 500, 400, 300, self.latent_size]
         self.encoder = nn.Sequential(

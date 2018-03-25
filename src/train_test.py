@@ -70,7 +70,7 @@ def test(model, optimizer, test_data, use_cuda, batch_size, matrix_types):
         else:
             sq_err = (latent_a_vectors - latent_prediction) ** 2
             tot_sq_err = sq_err.sum(2)
-            _, pred_var = torch.min(tot_sq_err, 0)
+            _, pred_var = torch.min(tot_sq_err, 1)
             pred = pred_var.data
         correct += pred.eq(target.data.view_as(pred)).cpu().sum()
 
