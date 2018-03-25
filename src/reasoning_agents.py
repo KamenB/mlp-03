@@ -4,7 +4,7 @@ from torch.autograd import Variable
 
 
 class FFNReasoningAgent(nn.Module):
-    def __init__(self, encoding_size, hidden_size, num_hidden, num_images=8):
+    def __init__(self, encoding_size, hidden_size = 100, num_hidden=2, num_images=8):
         super(FFNReasoningAgent, self).__init__()
         self.hidden_layers = num_hidden - 1
         self.hidden_size = hidden_size
