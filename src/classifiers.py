@@ -7,18 +7,19 @@ class PairwiseClassifier(nn.Module):
         modules = []
         self.last_layer = last_layer_size
         self.num_layers = num_layers
-            for i in range(num_layers):
-                if i == 0:
-                    modules.append(nn.Linear(latent_size, layer_size))
-                    modules.append(nn.PReLU())
-                elif i == nb_layers-1:
-                    modules.append(nn.Linear(layer_size, output_dim))
-                # elif i == nb_layers-2 and num_layers >= 3:
-                #     modules.append(nn.Linear(layer_size, last_layer))
-                #     modules.append(nn.PReLU())
-                else:
-                    fc.append(nn.Linear(layer_size, layer_size))
-                    modules.append(nn.PReLU())
+        self.last_layer_size = last_layer_size
+        for i in range(num_layers):
+            if i == num_layers-1:
+                modules.append(nn.Linear(layer_size, 1))
+            elif i == 0:
+                modules.append(nn.Linear(latent_size, layer_size))
+                modules.append(nn.PReLU())
+            # elif i == nb_layers-2 and num_layers >= 3:
+            #     modules.append(nn.Linear(layer_size, last_layer_size))
+            #     modules.append(nn.PReLU())
+            else:
+                modules.append(nn.Linear(layer_size, layer_size))
+                modules.append(nn.PReLU())
 
         self.input_transform = nn.Sequential(*modules)
 
@@ -33,18 +34,18 @@ class PairwiseClassifier(nn.Module):
         modules = []
         self.last_layer = last_layer_size
         self.num_layers = num_layers
-            for i in range(num_layers):
-                if i == 0:
-                    modules.append(nn.Linear(latent_size, layer_size))
-                    modules.append(nn.PReLU())
-                elif i == nb_layers-1:
-                    modules.append(nn.Linear(layer_size, output_dim))
-                # elif i == nb_layers-2 and num_layers >= 3:
-                #     modules.append(nn.Linear(layer_size, last_layer))
-                #     modules.append(nn.PReLU())
-                else:
-                    fc.append(nn.Linear(layer_size, layer_size))
-                    modules.append(nn.PReLU())
+        for i in range(num_layers):
+            if i == num_layers-1:
+                modules.append(nn.Linear(layer_size, 1))
+            elif i == 0:
+                modules.append(nn.Linear(latent_size, layer_size))
+                modules.append(nn.PReLU())
+            # elif i == nb_layers-2 and num_layers >= 3:
+            #     modules.append(nn.Linear(layer_size, last_layer_size))
+            #     modules.append(nn.PReLU())
+            else:
+                modules.append(nn.Linear(layer_size, layer_size))
+                modules.append(nn.PReLU())
         self.choice_transform = nn.Sequential(*modules)
 
 
