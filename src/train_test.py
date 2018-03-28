@@ -61,7 +61,7 @@ def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, 
     # Get entire validation set
     val_loader = val_data.get_batch_iterator(val_data.size(), transpose_inputs=True, separate_inputs=True)
     # Only get train loss, without training
-    train_loss, train_correct  = _epoch(model, optimizer, train_loader, use_cuda, 0, train=True)
+    train_loss, train_correct  = _epoch(model, optimizer, train_loader, use_cuda, 0, train=False)
     train_loss /= train_data.size()
     train_accuracy = train_correct / train_data.size()
     if verbose:
@@ -90,7 +90,7 @@ def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, 
         train_loader = train_data.get_batch_iterator(batch_size, transpose_inputs=True, separate_inputs=True)
         # Get entire validation set
         val_loader = val_data.get_batch_iterator(val_data.size(), transpose_inputs=True, separate_inputs=True)
-        train_loss, train_correct  = _epoch(model, optimizer, train_loader, use_cuda, epoch_idx, train=False)
+        train_loss, train_correct  = _epoch(model, optimizer, train_loader, use_cuda, epoch_idx, train=True)
         train_loss /= train_data.size()
         train_accuracy = train_correct / train_data.size()
         if verbose:
