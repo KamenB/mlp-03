@@ -1,0 +1,24 @@
+{
+    "img_size": [28],
+    "encoding_size": [50, 100],
+
+    "ae_type": ["pca"],
+    "ae_hidden_sizes": [[300]],
+
+    "ra_type": ["ff"],
+    "ra_hidden_size": [100],
+    "ra_num_layers": [1],
+    "ra_nonlinearity": ["relu"],
+    "ra_network_type": ["vanilla"],
+
+    "clf_type": ["lse"],
+    "clf_hidden_sizes": [[50]],
+    "clf_nonlinearity": ["relu"],
+
+    "learning_rate": [0.05, 0.1, 1],
+    "momentum": [0.1, 0.2],
+    "weight_decay": [0],
+    "num_epochs": [80],
+    "epoch_patience": [12],
+    "batch_size": [64]
+}
