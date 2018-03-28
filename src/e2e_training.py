@@ -171,7 +171,9 @@ if __name__ == '__main__':
     prop = float(sys.argv[3])
     hypers_list = np.random.choice(hypers_list, int(prop * len(hypers_list)), replace=False)
 
-    for i, (h, m) in enumerate(train_e2e(hypers_list)):
+    use_cuda = torch.cuda.is_available()
+
+    for i, (h, m) in enumerate(train_e2e(hypers_list, use_cuda=use_cuda)):
         if h is not None and save:
             with open(os.path.join(folder, f'{i}.json'), 'w+') as fp:
                 json.dump(h, fp, indent=2)
