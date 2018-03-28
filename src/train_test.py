@@ -56,14 +56,23 @@ def _epoch(model, optimizer, loader, use_cuda, epoch_idx, train):
     return total_loss, total_correct
 
 def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, epoch_patience=5):
-    ''' Returns False if early stopping hasn't fired'''
-    model.train()
+    # Get entire validation set
+    val_loader = val_data.get_batch_iterator(val_data.size(), transpose_inputs=True, separate_inputs=True)
+    # Get initial validation loss
+    val_loss, val_correct = _epoch(model, optimizer, val_loader, use_cuda, 0, train=False)
+    val_loss /= val_data.size()
+    val_accuracy = val_correct / val_data.size()
+    
+    # Initialize everything we keep track of
     train_losses = []
-    val_losses = []
+    val_losses = [val_loss]
     train_accuracies = []
-    val_accuracies = []
-    best_val_loss = float('inf')
-    best_val_accuracy = 0
+    val_accuracies = [val_accuracy]
+    best_val_loss = val_loss
+    best_val_accuracy = val_accuracy
+    print('{0}: Epoch: {1} Loss: {2:.6f} Accuracy {3:.6f}'.format("Validation", 0, val_loss, val_accuracy))
+
+    model.train()
     for epoch_idx in range(1, epochs + 1):
         # Get new gen object at every epoch
         train_loader = train_data.get_batch_iterator(batch_size, transpose_inputs=True, separate_inputs=True)
