@@ -55,7 +55,7 @@ def _epoch(model, optimizer, loader, use_cuda, epoch_idx, train):
         total_correct += correct
     return total_loss, total_correct
 
-def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, epoch_patience=5):
+def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, epoch_patience=5, verbose=False):
     # Get initial losses
     train_loader = train_data.get_batch_iterator(batch_size, transpose_inputs=True, separate_inputs=True)
     # Get entire validation set
@@ -78,7 +78,9 @@ def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, 
     best_val_accuracy = val_accuracy
     best_acc_epoch_idx = 0
     best_model = model
-    print('{0}: Epoch: {1} Loss: {2:.6f} Accuracy {3:.6f}'.format("Validation", 0, val_loss, val_accuracy))
+
+    if verbose:
+        print('{0}: Epoch: {1} Loss: {2:.6f} Accuracy {3:.6f}'.format("Validation", 0, val_loss, val_accuracy))
 
     model.train()
     for epoch_idx in range(1, epochs + 1):
@@ -89,11 +91,13 @@ def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, 
         train_loss, train_correct  = _epoch(model, optimizer, train_loader, use_cuda, epoch_idx, train=True)
         train_loss /= train_data.size()
         train_accuracy = train_correct / train_data.size()
-        print('{0}: Epoch: {1} Loss: {2:.6f} Accuracy {3:.6f}'.format("Train", epoch_idx, train_loss, train_accuracy))
+        if verbose:
+            print('{0}: Epoch: {1} Loss: {2:.6f} Accuracy {3:.6f}'.format("Train", epoch_idx, train_loss, train_accuracy))
         val_loss, val_correct = _epoch(model, optimizer, val_loader, use_cuda, epoch_idx, train=False)
         val_loss /= val_data.size()
         val_accuracy = val_correct / val_data.size()
-        print('{0}: Epoch: {1} Loss: {2:.6f} Accuracy {3:.6f}'.format("Validation", epoch_idx, val_loss, val_accuracy))
+        if verbose:
+            print('{0}: Epoch: {1} Loss: {2:.6f} Accuracy {3:.6f}'.format("Validation", epoch_idx, val_loss, val_accuracy))
         train_losses.append(train_loss)
         val_losses.append(val_loss)
         train_accuracies.append(train_accuracy)
