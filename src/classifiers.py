@@ -14,19 +14,18 @@ class PairwiseClassifier(nn.Module):
         inp_modules = []
         choice_modules = []
 
-        for i, layer_size in enumerate(layer_sizes):
-            if i == len(layer_sizes) - 1:
-                inp_modules.append(nn.Linear(layer_size, 1))
-                choice_modules.append(nn.Linear(layer_size, 1))
-            else:
-                if i == 0:
-                    inp_modules.append(nn.Linear(latent_size, layer_size))
-                    choice_modules.append(nn.Linear(latent_size, layer_size))
-                else:
-                    inp_modules.append(nn.Linear(layer_size, layer_sizes[i + 1]))
-                    choice_modules.append(nn.Linear(layer_size, layer_sizes[i + 1]))
-                inp_modules.append(self.nonlinearity)
-                choice_modules.append(self.nonlinearity)
+        inp_modules.append(nn.Linear(latent_size, layer_sizes[0]))
+        choice_modules.append(nn.Linear(latent_size, layer_sizes[0]))
+
+        for i, layer_size in enumerate(layer_sizes[:-1]):
+            inp_modules.append(nn.Linear(layer_size, layer_sizes[i + 1]))
+            choice_modules.append(nn.Linear(layer_size, layer_sizes[i + 1]))
+
+            inp_modules.append(self.nonlinearity)
+            choice_modules.append(self.nonlinearity)
+
+        inp_modules.append(nn.Linear(layer_sizes[-1], 1))
+        choice_modules.append(nn.Linear(layer_sizes[-1], 1))
 
         self.input_transform = nn.Sequential(*inp_modules)
         self.choice_transform = nn.Sequential(*choice_modules)
