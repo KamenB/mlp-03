@@ -201,6 +201,7 @@ class PCAAutoencoder(nn.Module):
         super(PCAAutoencoder, self).__init__()
         self.V = None
         self.K = K
+        self._cuda = False
 
     def train_encoding(self, data):
         """
@@ -245,6 +246,7 @@ class PCAAutoencoder(nn.Module):
 
         # Make torch variable
         latent_vector = torch.autograd.Variable(torch.from_numpy(latent_vector).float())
+        if self._cuda: return latent_vector.cuda()
         return latent_vector
 
     def decoder(self, encoded):
@@ -259,7 +261,8 @@ class PCAAutoencoder(nn.Module):
 
         # Make torch variable
         decoded = torch.autograd.Variable(torch.from_numpy(decoded).float())
-        return decoded        
+        if self._cuda: return decoded.cuda()
+        return decoded
 
     def set_frozen(self, frozen):
         pass
@@ -269,3 +272,6 @@ class PCAAutoencoder(nn.Module):
 
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
+
+    def cuda(self, device=None):
+        self._cuda = True
