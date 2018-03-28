@@ -33,25 +33,29 @@ def show_batch_of_images(img_batch, fig):
     return fig, ax
 
 
-def show_grid_of_images(img_batch, img_size=(1,1), grid_size=None, show=True, label=None, pred=None, cmap=None):
+def show_grid_of_images(img_batch, img_size=(1,1), grid_size=None, label=None, pred=None, cmap=None):
     # How many squares for a square grid that can fit all images
     if grid_size == None:
         grid_size = math.ceil(math.sqrt(len(img_batch)))
         grid_size = (grid_size, grid_size)
     fig, axs = plt.subplots(grid_size[0], grid_size[1], figsize=(img_size[0] * grid_size[0], img_size[1] * grid_size[1]))
+    # Turn the 2d array of axes to a 1d array
+    axs = axs.flatten()
     # Add border to correct answers
     if label or pred:
         for axis in axs:
             [j.set_linewidth(0) for j in axis.spines.values()]
+    if pred is not None:
+        axis = axs[pred][0]
+        [j.set_linewidth(3) for j in axis.spines.values()]
     if label is not None:    
         axis = axs[label][0]
         [j.set_linewidth(3) for j in axis.spines.values()]
-    if pred is not None:
-        axis = axs[pred][0]
-        [j.set_linewidth(6) for j in axis.spines.values()]
         [j.set_color('red') for j in axis.spines.values()]
-    # Turn the 2d array of axes to a 1d array
-    axs = axs.flatten()
+    if label is not None and pred is not None and label == pred:
+        axis = axs[label][0]
+        [j.set_linewidth(6) for j in axis.spines.values()]
+        [j.set_color('green') for j in axis.spines.values()]
     for i, img in enumerate(img_batch):
         axs[i].imshow(img.reshape(28,28), cmap=cmap)
     # Do this separately in case the number of images we want to show is not a perfect square
@@ -64,9 +68,10 @@ def show_grid_of_images(img_batch, img_size=(1,1), grid_size=None, show=True, la
         else:
             axs[i].axis('off')
     plt.show()
+    return fig
 
 
-def show_matrix(inputs, targets, decoded_inputs, decoded_predictions, cmap=None):
+def show_matrix(inputs, targets, decoded_predictions, cmap=None):
     '''
         Input:
             inputs                  - batch_sizex8xim_widthxim_height
@@ -74,19 +79,25 @@ def show_matrix(inputs, targets, decoded_inputs, decoded_predictions, cmap=None)
             decoded_inputs          - batch_sizex8xim_widthxim_height
             decoded_predictions     - batch_sizex1xim_widthxim_height
     '''
+    figs = []
     for batch_idx in range(inputs.size(0)):
         inputs_np = inputs[batch_idx].cpu().data.numpy()
-        decoded_inputs_np = decoded_inputs[batch_idx].cpu().data.numpy()
         targets_np = targets[batch_idx:batch_idx+1].cpu().data.numpy()
         
         decoded_predictions_np = decoded_predictions[batch_idx:batch_idx+1].cpu().data.numpy()
         
-        inputs_np = np.concatenate([inputs_np, targets_np])
-        decoded_np = np.concatenate([decoded_inputs_np, decoded_predictions_np])
-        
-        show_grid_of_images(np.concatenate([inputs_np, decoded_np]), img_size=(9, 0.5), grid_size=(2, 9), show=False, cmap=cmap)
-    plt.show()
+        fig = show_grid_of_images(np.concatenate([inputs_np, decoded_predictions_np]), img_size=(2, 2), grid_size=(3, 3), cmap=cmap)
+        figs.append(fig)
+    return figs
 
+def show_answers(a_vectors, decoded_prediction, labels, preds):
+    a_vectors_np = a_vectors.cpu().data.numpy()
+    decoded_prediction_np = decoded_prediction.cpu().data.numpy()
+    figs = []
+    for i in range(len(a_vectors_np)):
+        fig = show_grid_of_images(a_vectors_np[i], img_size=(4, 1), grid_size=(2, 4), label=labels[i].cpu().data.numpy(), pred=preds[i].cpu().data.numpy(), cmap='gray')
+        figs.append(fig)
+    return figs
 
 def make_vars(np_arrays, dtype_names, use_cuda):
     dtype_dict = {

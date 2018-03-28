@@ -56,20 +56,28 @@ def _epoch(model, optimizer, loader, use_cuda, epoch_idx, train):
     return total_loss, total_correct
 
 def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, epoch_patience=5):
+    # Get initial losses
+    train_loader = train_data.get_batch_iterator(batch_size, transpose_inputs=True, separate_inputs=True)
     # Get entire validation set
     val_loader = val_data.get_batch_iterator(val_data.size(), transpose_inputs=True, separate_inputs=True)
-    # Get initial validation loss
+    # Only get train loss, without training
+    train_loss, train_correct  = _epoch(model, optimizer, train_loader, use_cuda, 0, train=False)
+    train_loss /= train_data.size()
+    train_accuracy = train_correct / train_data.size()
+    print('{0}: Epoch: {1} Loss: {2:.6f} Accuracy {3:.6f}'.format("Train", 0, train_loss, train_accuracy))
     val_loss, val_correct = _epoch(model, optimizer, val_loader, use_cuda, 0, train=False)
     val_loss /= val_data.size()
     val_accuracy = val_correct / val_data.size()
     
     # Initialize everything we keep track of
-    train_losses = []
+    train_losses = [train_loss]
     val_losses = [val_loss]
-    train_accuracies = []
+    train_accuracies = [train_accuracy]
     val_accuracies = [val_accuracy]
     best_val_loss = val_loss
     best_val_accuracy = val_accuracy
+    best_acc_epoch_idx = 0
+    best_model = model
     print('{0}: Epoch: {1} Loss: {2:.6f} Accuracy {3:.6f}'.format("Validation", 0, val_loss, val_accuracy))
 
     model.train()
