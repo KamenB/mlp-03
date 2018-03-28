@@ -64,7 +64,8 @@ def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, 
     train_loss, train_correct  = _epoch(model, optimizer, train_loader, use_cuda, 0, train=False)
     train_loss /= train_data.size()
     train_accuracy = train_correct / train_data.size()
-    print('{0}: Epoch: {1} Loss: {2:.6f} Accuracy {3:.6f}'.format("Train", 0, train_loss, train_accuracy))
+    if verbose:
+        print('{0}: Epoch: {1} Loss: {2:.6f} Accuracy {3:.6f}'.format("Train", 0, train_loss, train_accuracy))
     val_loss, val_correct = _epoch(model, optimizer, val_loader, use_cuda, 0, train=False)
     val_loss /= val_data.size()
     val_accuracy = val_correct / val_data.size()
