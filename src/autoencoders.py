@@ -105,36 +105,23 @@ class MLP_autoencoder(nn.Module):
         return encoded, decoded
 
 class FeedforwardAutoencoder(nn.Module):
-    def __init__(self, latent_size):
+    def __init__(self, input_size, latent_size, hidden_sizes):
         super(FeedforwardAutoencoder, self).__init__()
-        self.latent_size = latent_size
-        h = [28*28, 500, 400, 300, self.latent_size]
-        self.encoder = nn.Sequential(
-            # Input is (28*28)
-            nn.Linear(h[0], h[1]),
-            nn.ReLU(True),
+        self.encoder = nn.Sequential()
+        self.encoder.add_module('lin_0', nn.Linear(input_size, hidden_sizes[0]))
+        self.encoder.add_module('relu_0', nn.ReLU(True))
+        for i in range(len(hidden_sizes)-1):
+            self.encoder.add_module('lin_' + str(i+1), nn.Linear(hidden_sizes[i], hidden_sizes[i+1]))
+            self.encoder.add_module('relu_' + str(i+1), nn.ReLU(True))     
+        self.encoder.add_module('lin_' + str(len(hidden_sizes)), nn.Linear(hidden_sizes[-1], latent_size))
 
-            nn.Linear(h[1], h[2]),
-            nn.ReLU(True),
-
-            nn.Linear(h[2], h[3]),
-            nn.ReLU(True),     
-
-            nn.Linear(h[3], h[4])
-        )
-        self.decoder = nn.Sequential(
-            # Input is (latent_size)
-            nn.Linear(h[4], h[3]),
-            nn.ReLU(True),
-
-            nn.Linear(h[3], h[2]),
-            nn.ReLU(True),
-
-            nn.Linear(h[2], h[1]),
-            nn.ReLU(True),
-
-            nn.Linear(h[1], h[0])
-        )
+        self.decoder = nn.Sequential()
+        self.decoder.add_module('lin_' + str(len(hidden_sizes)), nn.Linear(latent_size, hidden_sizes[-1]))
+        self.decoder.add_module('relu_' + str(len(hidden_sizes)), nn.ReLU(True))
+        for i in range(len(hidden_sizes)-1, 0, -1):
+            self.decoder.add_module('lin_' + str(i), nn.Linear(hidden_sizes[i], hidden_sizes[i-1]))
+            self.decoder.add_module('relu_' + str(i), nn.ReLU(True))
+        self.decoder.add_module('lin_0', nn.Linear(hidden_sizes[0], input_size))
 
     def forward(self, input_vector):
         # Input is num_im x 1 x im_width x im_height
@@ -209,12 +196,13 @@ class Conv2DAutoencoder(nn.Module):
     def is_frozen(self):
         return not next(self.parameters()).requires_grad
 
-class PCAAutoencoder:
+class PCAAutoencoder(nn.Module):
     def __init__(self, K=None):
+        super(PCAAutoencoder, self).__init__()
         self.V = None
         self.K = K
 
-    def train(self, data):
+    def train_encoding(self, data):
         """
         Obtains and stores the mean of each feature vector and the PCA projection matrix
         :param data(np.array): NxD np array, where N is the number of examples, D is the number of features

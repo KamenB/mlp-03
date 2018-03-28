@@ -26,23 +26,40 @@ def show_batch_of_images(img_batch, fig):
     return fig, ax
 
 
-def show_grid_of_images(img_batch, img_size=(1,1), grid_size=None, show=True):
+def show_grid_of_images(img_batch, img_size=(1,1), grid_size=None, show=True, label=None, pred=None, cmap=None):
     # How many squares for a square grid that can fit all images
     if grid_size == None:
         grid_size = math.ceil(math.sqrt(len(img_batch)))
         grid_size = (grid_size, grid_size)
     fig, axs = plt.subplots(grid_size[0], grid_size[1], figsize=(img_size[0] * grid_size[0], img_size[1] * grid_size[1]))
+    # Add border to correct answers
+    if label or pred:
+        for axis in axs:
+            [j.set_linewidth(0) for j in axis.spines.values()]
+    if label is not None:    
+        axis = axs[label][0]
+        [j.set_linewidth(3) for j in axis.spines.values()]
+    if pred is not None:
+        axis = axs[pred][0]
+        [j.set_linewidth(6) for j in axis.spines.values()]
+        [j.set_color('red') for j in axis.spines.values()]
     # Turn the 2d array of axes to a 1d array
     axs = axs.flatten()
     for i, img in enumerate(img_batch):
-        axs[i].imshow(img.reshape(28,28))
+        axs[i].imshow(img.reshape(28,28), cmap=cmap)
     # Do this separately in case the number of images we want to show is not a perfect square
     for i in range(grid_size[0] * grid_size[1]):
-        axs[i].axis('off')
+        if label is not None:
+            plt.setp(axs[i].get_yticklabels(), visible=False)
+            plt.setp(axs[i].get_xticklabels(), visible=False)
+            axs[i].xaxis.set_tick_params(size=0)
+            axs[i].yaxis.set_tick_params(size=0)
+        else:
+            axs[i].axis('off')
     plt.show()
 
 
-def show_matrix(inputs, targets, decoded_inputs, decoded_predictions):
+def show_matrix(inputs, targets, decoded_inputs, decoded_predictions, cmap=None):
     '''
         Input:
             inputs                  - batch_sizex8xim_widthxim_height
@@ -60,7 +77,7 @@ def show_matrix(inputs, targets, decoded_inputs, decoded_predictions):
         inputs_np = np.concatenate([inputs_np, targets_np])
         decoded_np = np.concatenate([decoded_inputs_np, decoded_predictions_np])
         
-        show_grid_of_images(np.concatenate([inputs_np, decoded_np]), img_size=(9, 0.5), grid_size=(2, 9), show=False)
+        show_grid_of_images(np.concatenate([inputs_np, decoded_np]), img_size=(9, 0.5), grid_size=(2, 9), show=False, cmap=cmap)
     plt.show()
 
 
