@@ -2,6 +2,7 @@ from src.utils import make_vars
 import torch.nn.functional as F
 import torch
 import copy
+import math
 
 def _get_loss_with_classifier(logits, target):
     # Prediction part of the loss
@@ -80,6 +81,8 @@ def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, 
         val_losses.append(val_loss)
         train_accuracies.append(train_accuracy)
         val_accuracies.append(val_accuracy)
+        if math.isnan(train_loss) or math.isnan(val_loss):
+            break
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
