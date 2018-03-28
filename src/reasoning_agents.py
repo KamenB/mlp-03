@@ -2,6 +2,11 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 
+from src.utils import NONLINEARITY_MAP
+
+
+def relu(h):
+    return h.clamp(min=0)
 
 class FFNReasoningAgent(nn.Module):
 
@@ -9,7 +14,14 @@ class FFNReasoningAgent(nn.Module):
         super(FFNReasoningAgent, self).__init__()
         self.hidden_layers = num_hidden - 1
         self.hidden_size = hidden_size
+        
         self.nonlinearity = nonlinearity
+        if nonlinearity not in NONLINEARITY_MAP:
+            print(f'Unkown nonlinearity: {nonlinearity}')
+        self.nonlinearity = nonlinearity
+        if self.nonlinearity is not None:
+            self.nonlinearity = NONLINEARITY_MAP[self.nonlinearity]
+
 
         self.first_layer = torch.nn.Linear(num_images * encoding_size, hidden_size)
         self.middle_layers = nn.ModuleList()
@@ -30,13 +42,13 @@ class FFNReasoningAgent(nn.Module):
         h_i = self.first_layer(latent_vectors.view(batch_size, -1))
 
         if self.nonlinearity is not None:
-            h_i = h_i.clamp(min=0)
+            h_i = self.nonlinearity(h_i)
 
         # Pass through middle layers
         for i in range(self.hidden_layers):
             h_i = self.middle_layers[i](h_i)
             if self.nonlinearity is not None:
-                h_i = h_i.clamp(min=0)
+                h_i = self.nonlinearity(h_i)
 
         y_pred = self.final_layer(h_i)
 
