@@ -1,61 +1,35 @@
 from torch import nn
+from src.utils import NONLINEARITY_MAP
 
 class PairwiseClassifier(nn.Module):
-    def __init__(self, latent_size, num_layers = 3, layer_size = 50, last_layer_size = 10):
+    def __init__(self, latent_size, layer_sizes = (100, 50, 10), nonlinearity=None):
         super(PairwiseClassifier, self).__init__()
 
-        modules = []
-        self.last_layer = last_layer_size
-        self.num_layers = num_layers
-        self.last_layer_size = last_layer_size
-        for i in range(num_layers):
-            if i == num_layers-1:
-                modules.append(nn.Linear(layer_size, 1))
-            elif i == 0:
-                modules.append(nn.Linear(latent_size, layer_size))
-                modules.append(nn.PReLU())
-            # elif i == nb_layers-2 and num_layers >= 3:
-            #     modules.append(nn.Linear(layer_size, last_layer_size))
-            #     modules.append(nn.PReLU())
+        if nonlinearity not in NONLINEARITY_MAP:
+            print(f'Unkown nonlinearity: {nonlinearity}')
+        self.nonlinearity = nonlinearity
+        if self.nonlinearity is not None:
+            self.nonlinearity = NONLINEARITY_MAP[self.nonlinearity]
+
+        inp_modules = []
+        choice_modules = []
+
+        for i, layer_size in enumerate(layer_sizes):
+            if i == len(layer_sizes) - 1:
+                inp_modules.append(nn.Linear(layer_size, 1))
+                choice_modules.append(nn.Linear(layer_size, 1))
             else:
-                modules.append(nn.Linear(layer_size, layer_size))
-                modules.append(nn.PReLU())
+                if i == 0:
+                    inp_modules.append(nn.Linear(latent_size, layer_size))
+                    choice_modules.append(nn.Linear(latent_size, layer_size))
+                else:
+                    inp_modules.append(nn.Linear(layer_size, layer_sizes[i + 1]))
+                    choice_modules.append(nn.Linear(layer_size, layer_sizes[i + 1]))
+                inp_modules.append(self.nonlinearity)
+                choice_modules.append(self.nonlinearity)
 
-        self.input_transform = nn.Sequential(*modules)
-
-        # self.input_transform = nn.Sequential(
-        #     nn.Linear(latent_size, 50),
-        #     nn.PReLU(),
-        #     nn.Linear(50, 10),
-        #     nn.PReLU(),
-        #     nn.Linear(10, 1)
-        # )
-
-        modules = []
-        self.last_layer = last_layer_size
-        self.num_layers = num_layers
-        for i in range(num_layers):
-            if i == num_layers-1:
-                modules.append(nn.Linear(layer_size, 1))
-            elif i == 0:
-                modules.append(nn.Linear(latent_size, layer_size))
-                modules.append(nn.PReLU())
-            # elif i == nb_layers-2 and num_layers >= 3:
-            #     modules.append(nn.Linear(layer_size, last_layer_size))
-            #     modules.append(nn.PReLU())
-            else:
-                modules.append(nn.Linear(layer_size, layer_size))
-                modules.append(nn.PReLU())
-        self.choice_transform = nn.Sequential(*modules)
-
-
-        # self.choice_transform = nn.Sequential(
-        #     nn.Linear(latent_size, 50),
-        #     nn.PReLU(),
-        #     nn.Linear(50, 10),
-        #     nn.PReLU(),
-        #     nn.Linear(10, 1)
-        # )
+        self.input_transform = nn.Sequential(*inp_modules)
+        self.choice_transform = nn.Sequential(*choice_modules)
 
     def forward(self, latent_prediction, latent_choices):
         '''
