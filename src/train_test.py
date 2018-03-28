@@ -82,7 +82,7 @@ def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, 
         train_accuracies.append(train_accuracy)
         val_accuracies.append(val_accuracy)
         if math.isnan(train_loss) or math.isnan(val_loss):
-            break
+            raise NoneError("Got NaN error")
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -99,7 +99,7 @@ def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, 
                 (epoch_idx - best_acc_epoch_idx) > epoch_patience):
             return best_acc_epoch_idx, best_model, train_losses, val_losses, train_accuracies, val_accuracies
 
-    return epochs, best_model, train_losses, val_losses, train_accuracies, val_accuracies
+    return best_acc_epoch_idx, best_model, train_losses, val_losses, train_accuracies, val_accuracies
 
 def test(model, optimizer, test_data, use_cuda, batch_size):
     model.eval()
