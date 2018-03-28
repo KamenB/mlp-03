@@ -1,6 +1,7 @@
 from src.utils import make_vars
 import torch.nn.functional as F
 import torch
+import math
 
 def _get_loss_with_classifier(logits, target):
     # Prediction part of the loss
@@ -52,6 +53,8 @@ def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs):
         val_loader = val_data.get_batch_iterator(batch_size, transpose_inputs=True, separate_inputs=True)
         train_loss  = _epoch(model, optimizer, train_loader, use_cuda, epoch_idx, train=True)
         val_loss    = _epoch(model, optimizer, val_loader, use_cuda, epoch_idx, train=False)
+        if math.isnan(train_loss):
+            break
 
     # Normalize loss over dataset size
     return train_loss / train_data.size(), val_loss / val_data.size()
