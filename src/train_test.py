@@ -82,7 +82,7 @@ def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, 
         train_accuracies.append(train_accuracy)
         val_accuracies.append(val_accuracy)
         if math.isnan(train_loss) or math.isnan(val_loss):
-            raise NoneError("Got NaN error")
+            raise ValueError("Got NaN error")
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
