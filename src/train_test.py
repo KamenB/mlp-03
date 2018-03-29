@@ -125,10 +125,10 @@ def train(model, optimizer, train_data, val_data, use_cuda, batch_size, epochs, 
 
     return best_acc_epoch_idx, best_model, train_losses, val_losses, train_accuracies, val_accuracies
 
-def test(model, optimizer, test_data, use_cuda, batch_size):
+def test(model, test_data, use_cuda):
     model.eval()
-    test_loader = test_data.get_batch_iterator(batch_size, transpose_inputs=True, separate_inputs=True)
-    test_loss, test_correct  = _epoch(model, optimizer, test_loader, use_cuda, 0, train=False)
+    test_loader = test_data.get_batch_iterator(test_data.size(), transpose_inputs=True, separate_inputs=True)
+    test_loss, test_correct  = _epoch(model, None, test_loader, use_cuda, 0, train=False)
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, test_correct, test_data.size(),
         100. * test_correct / test_data.size()))
