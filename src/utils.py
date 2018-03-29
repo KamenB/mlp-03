@@ -71,22 +71,22 @@ def show_grid_of_images(img_batch, img_size=(1,1), grid_size=None, label=None, p
     return fig
 
 
-def show_matrix(inputs, targets, decoded_predictions, cmap=None):
+def show_matrix(inputs, targets, decoded_prediction, cmap=None):
     '''
         Input:
             inputs                  - batch_sizex8xim_widthxim_height
             targets                 - batch_sizex1xim_widthxim_height
             decoded_inputs          - batch_sizex8xim_widthxim_height
-            decoded_predictions     - batch_sizex1xim_widthxim_height
+            decoded_prediction      - batch_sizex1xim_widthxim_height
     '''
     figs = []
     for batch_idx in range(inputs.size(0)):
         inputs_np = inputs[batch_idx].cpu().data.numpy()
         targets_np = targets[batch_idx:batch_idx+1].cpu().data.numpy()
         
-        decoded_predictions_np = decoded_predictions[batch_idx:batch_idx+1].cpu().data.numpy()
+        decoded_prediction_np = decoded_prediction[batch_idx:batch_idx+1].cpu().data.numpy()
         
-        fig = show_grid_of_images(np.concatenate([inputs_np, decoded_predictions_np]), img_size=(2, 2), grid_size=(3, 3), cmap=cmap)
+        fig = show_grid_of_images(np.concatenate([inputs_np, decoded_prediction_np]), img_size=(2, 2), grid_size=(3, 3), cmap=cmap)
         figs.append(fig)
     return figs
 
@@ -98,6 +98,27 @@ def show_answers(a_vectors, decoded_prediction, labels, preds):
         fig = show_grid_of_images(a_vectors_np[i], img_size=(4, 1), grid_size=(2, 4), label=labels[i].cpu().data.numpy(), pred=preds[i].cpu().data.numpy(), cmap='gray')
         figs.append(fig)
     return figs
+
+def show_problem(model, data_provider, batch_size, use_cuda, cmap=None):
+    data_loader = data_provider.get_batch_iterator(batch_size, transpose_inputs=True, separate_inputs=True)
+
+    (q_vectors, a_vectors), labels = next(data_loader)
+    q_vectors, a_vectors, labels = make_vars([q_vectors, a_vectors, labels], ['float', 'float', 'long'], use_cuda=use_cuda)
+    logits, latent_prediction, decoded_q_vectors, decoded_a_vectors, latent_a_vectors = model(q_vectors, a_vectors)
+    
+    indices = torch.from_numpy(np.arange(batch_size)).long()
+    if use_cuda:
+        indices = indices.cuda()
+    targets = a_vectors[indices, labels.data]
+
+    sq_err = (latent_a_vectors - latent_prediction) ** 2
+    tot_sq_err = sq_err.sum(2)
+    _, pred_var = torch.min(tot_sq_err, 1)
+
+    decoded_prediction = model.autoencoder.decoder(latent_prediction.view(batch_size, -1)).squeeze().view(batch_size, 28, 28)
+    matrix_figs = show_matrix(q_vectors, targets, decoded_prediction, cmap=cmap)
+    answer_figs = show_answers(a_vectors, decoded_prediction, labels, pred_var)
+    return zip(matrix_figs, answer_figs)
 
 def make_vars(np_arrays, dtype_names, use_cuda):
     dtype_dict = {
