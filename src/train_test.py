@@ -24,7 +24,7 @@ def _step(model, q_vectors, a_vectors, target, use_cuda):
         if use_cuda:
             indices = indices.cuda()
         latent_target = latent_a_vectors[indices, target.data].squeeze()
-        loss = _get_loss_with_latent(latent_prediction, latent_target)
+        loss = _get_loss_with_latent(latent_prediction, latent_target.detach())
     # Autoencoder part of the loss
     if not model.autoencoder.is_frozen():
         # Autoencodings of q_vectors
