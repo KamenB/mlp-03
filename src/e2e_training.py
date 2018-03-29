@@ -111,6 +111,8 @@ def train_e2e(hyperparams, use_cuda=True, verbose=True, plot=False):
                                   weight_decay=weight_decay)
                 # There are 16 times more images than problems
                 ae_batch_size = batch_size * 16
+                # Reduce the time the pretraining requires
+                ae_num_epochs = num_epochs // 5
                 ae_losses = train_autoencoder(autoencoder, ae_optimizer, train_data, ae_batch_size, num_epochs, use_cuda, verbose=False)
                 ae_sec_elapsed = time.time() - start
                 print(f'Autoencoder took {ae_sec_elapsed:.1f} sec')
