@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 from torch import nn
 import torch.nn.functional as F
@@ -275,3 +276,18 @@ class PCAAutoencoder(nn.Module):
 
     def cuda(self, device=None):
         self._cuda = True
+
+
+class IdentityAutoencoder(nn.Module):
+    def __init__(self):
+        super(IdentityAutoencoder, self).__init__()
+
+    def is_frozen(self):
+        return True
+
+    def forward(self, input):
+        '''
+        :param input: shape: num_im_in_entire_batch, channels(1), im_width, im_height
+        :return:
+        '''
+        return input.view(-1, input.shape[-1] * input.shape[-2]), copy.deepcopy(input.view(-1, input.shape[-1] * input.shape[-2]))

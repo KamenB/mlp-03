@@ -21,7 +21,7 @@ sys.path.append(cwd)
 
 from src.datautils.sandia import SandiaDataProvider
 from src.reasoning_agents import FFNReasoningAgent, RNN_RA
-from src.autoencoders import PCAAutoencoder, FeedforwardAutoencoder, Conv2DAutoencoder
+from src.autoencoders import PCAAutoencoder, FeedforwardAutoencoder, Conv2DAutoencoder, IdentityAutoencoder
 from src.classifiers import PairwiseClassifier
 from src.utils import dict_of_lists_to_list_of_dicts
 from src.utiq import UTIQ
@@ -83,6 +83,9 @@ def train_e2e(hyperparams, use_cuda=True, verbose=True, plot=False):
             autoencoder = FeedforwardAutoencoder(img_size ** 2, encoding_size, ae_hidden_sizes)
         elif ae_type == 'conv':
             autoencoder = Conv2DAutoencoder(encoding_size)
+        elif ae_type == 'identity':
+            encoding_size = img_size ** 2
+            autoencoder = IdentityAutoencoder()
 
         if ra_type == 'ff':
             reasoning_agent = FFNReasoningAgent(encoding_size=encoding_size, hidden_size=ra_hidden_size,
