@@ -2,7 +2,7 @@ from torch import nn
 from src.utils import NONLINEARITY_MAP
 
 class PairwiseClassifier(nn.Module):
-    def __init__(self, latent_size, layer_sizes = (100, 50, 10), nonlinearity=None):
+    def __init__(self, latent_size, layer_sizes = (100, 50, 10), nonlinearity=None, use_batchnorm=False):
         super(PairwiseClassifier, self).__init__()
 
         if nonlinearity not in NONLINEARITY_MAP:
@@ -20,7 +20,9 @@ class PairwiseClassifier(nn.Module):
         for i, layer_size in enumerate(layer_sizes[:-1]):
             inp_modules.append(nn.Linear(layer_size, layer_sizes[i + 1]))
             choice_modules.append(nn.Linear(layer_size, layer_sizes[i + 1]))
-
+            if use_batchnorm:
+                inp_modules.append(nn.BatchNorm1d(layer_sizes[i + 1]))
+                choice_modules.append(nn.BatchNorm1d(layer_sizes[i + 1]))
             inp_modules.append(self.nonlinearity)
             choice_modules.append(self.nonlinearity)
 

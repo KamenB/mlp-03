@@ -9,9 +9,9 @@ def relu(h):
     return h.clamp(min=0)
 
 class FFNReasoningAgent(nn.Module):
-
-    def __init__(self, encoding_size, hidden_size, num_hidden, nonlinearity='relu', num_images=8):
+    def __init__(self, encoding_size, hidden_size, num_hidden, nonlinearity='relu', num_images=8, use_batchnorm=True):
         super(FFNReasoningAgent, self).__init__()
+        self.use_batchnorm = use_batchnorm
         self.hidden_layers = num_hidden - 1
         self.hidden_size = hidden_size
         
@@ -25,8 +25,12 @@ class FFNReasoningAgent(nn.Module):
 
         self.first_layer = torch.nn.Linear(num_images * encoding_size, hidden_size)
         self.middle_layers = nn.ModuleList()
+        if use_batchnorm:
+            self.middle_layers.append(torch.nn.BatchNorm1d(hidden_size))
         for i in range(self.hidden_layers):
             self.middle_layers.append(torch.nn.Linear(hidden_size, hidden_size))
+            if use_batchnorm:
+                self.middle_layers.append(torch.nn.BatchNorm1d(hidden_size))
         self.final_layer = torch.nn.Linear(hidden_size, encoding_size)
 
     def forward(self, latent_vectors):
@@ -45,9 +49,9 @@ class FFNReasoningAgent(nn.Module):
             h_i = self.nonlinearity(h_i)
 
         # Pass through middle layers
-        for i in range(self.hidden_layers):
+        for i in range(len(self.middle_layers)):
             h_i = self.middle_layers[i](h_i)
-            if self.nonlinearity is not None:
+            if self.nonlinearity is not None and not isinstance(self.middle_layers[i], nn.BatchNorm1d):
                 h_i = self.nonlinearity(h_i)
 
         y_pred = self.final_layer(h_i)

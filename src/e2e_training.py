@@ -57,10 +57,14 @@ def train_e2e(hyperparams, use_cuda=True, verbose=True, plot=False):
         ra_num_layers = h['ra_num_layers']
         ra_nonlinearity = h['ra_nonlinearity']
         ra_network_type = h['ra_network_type']
+        if not 'ra_use_batchnorm' in h: h['ra_use_batchnorm'] = False
+        ra_use_batchnorm = h['ra_use_batchnorm']
 
         clf_type = h['clf_type']
         clf_hidden_sizes = h['clf_hidden_sizes']
         clf_nonlinearity = h['clf_nonlinearity']
+        if not 'clf_use_batchnorm' in h: h['clf_use_batchnorm'] = False
+        clf_use_batchnorm = h['clf_use_batchnorm']
 
         learning_rate = h['learning_rate']
         momentum = h['momentum']
@@ -82,14 +86,15 @@ def train_e2e(hyperparams, use_cuda=True, verbose=True, plot=False):
 
         if ra_type == 'ff':
             reasoning_agent = FFNReasoningAgent(encoding_size=encoding_size, hidden_size=ra_hidden_size,
-                                                num_hidden=ra_num_layers, nonlinearity=ra_nonlinearity)
+                                                num_hidden=ra_num_layers, nonlinearity=ra_nonlinearity,
+                                                use_batchnorm=ra_use_batchnorm)
         elif ra_type == 'rnn':
             reasoning_agent = RNN_RA(hidden_dim=ra_hidden_size, input_size=encoding_size, network_type=ra_network_type,
                                      use_gpu=use_cuda)
 
         if clf_type == 'pw':
             classifier = PairwiseClassifier(latent_size=encoding_size, layer_sizes=clf_hidden_sizes,
-                                            nonlinearity=clf_nonlinearity)
+                                            nonlinearity=clf_nonlinearity, use_batchnorm=clf_use_batchnorm)
         elif clf_type == 'lse':
             classifier = None
 
@@ -98,6 +103,7 @@ def train_e2e(hyperparams, use_cuda=True, verbose=True, plot=False):
             reasoning_agent.cuda()
 
         model = UTIQ(autoencoder, reasoning_agent, classifier, use_classifier=not (classifier == None))
+
         if use_cuda:
             model.cuda()
         optimizer = optim.SGD([x for x in model.parameters() if x.requires_grad], lr=learning_rate, momentum=momentum,
