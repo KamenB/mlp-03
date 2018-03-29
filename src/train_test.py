@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import torch
 import copy
 import math
+from torch.autograd import Variable
 
 def _get_loss_with_classifier(logits, target):
     # Prediction part of the loss
@@ -131,3 +132,32 @@ def test(model, optimizer, test_data, use_cuda, batch_size):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, test_correct, test_data.size(),
         100. * test_correct / test_data.size()))
+
+def _train_autoencoder_epoch(epoch, autoencoder, optimizer, train_data, batch_size, use_cuda):
+    autoencoder.train()
+    # Get new gen object at every epoch
+    train_loader = train_data.get_image_batch_iterator(batch_size)
+    total_loss = 0
+    for batch_idx, (data, _) in enumerate(train_loader):
+        # Set autoencoder target
+        target = data
+        if use_cuda:
+            data, target = data.cuda(), target.cuda()
+        data, target = Variable(data), Variable(target)
+        optimizer.zero_grad()
+        # Ignore latent representations
+        output, _ = autoencoder(data)
+        loss = F.mse_loss(output, target)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.data[0]
+    return total_loss
+
+def train_autoencoder(autoencoder, optimizer, train_data, batch_size, epochs, use_cuda, verbose=False):
+    losses = []
+    for epoch in range(1, epochs + 1):
+        loss = _train_autoencoder_epoch(epoch, autoencoder, optimizer, train_data, batch_size, use_cuda)
+        losses.append(loss)
+        if verbose:
+            print('Train Epoch: {0} Loss: {1:.6f}'.format(epoch, loss))
+    return losses

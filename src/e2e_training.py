@@ -25,8 +25,7 @@ from src.autoencoders import PCAAutoencoder, FeedforwardAutoencoder, Conv2DAutoe
 from src.classifiers import PairwiseClassifier
 from src.utils import dict_of_lists_to_list_of_dicts
 from src.utiq import UTIQ
-from src.train_test import train, test
-
+from src.train_test import train, test, train_autoencoder
 
 def train_e2e(hyperparams, use_cuda=True, verbose=True, plot=False):
     torch.manual_seed(123)
@@ -69,6 +68,8 @@ def train_e2e(hyperparams, use_cuda=True, verbose=True, plot=False):
         num_epochs = h['num_epochs']
         epoch_patience = h['epoch_patience']
         batch_size = h['batch_size']
+        pretrain_autoencoder = h['ae_pretrain']
+        freeze_autoencoder = h['ae_freeze']
 
         if ae_type == 'pca':
             autoencoder = PCAAutoencoder(encoding_size)
@@ -104,6 +105,19 @@ def train_e2e(hyperparams, use_cuda=True, verbose=True, plot=False):
 
         try:
             start = time.time()
+            # Pretrain only if not PCA
+            if pretrain_autoencoder and ae_type is not 'pca':
+                ae_optimizer = optim.SGD([x for x in autoencoder.parameters() if x.requires_grad], lr=learning_rate, momentum=momentum,
+                                  weight_decay=weight_decay)
+                # There are 16 times more images than problems
+                ae_batch_size = batch_size * 16
+                ae_losses = train_autoencoder(autoencoder, ae_optimizer, train_data, ae_batch_size, num_epochs, use_cuda, verbose=False)
+                ae_sec_elapsed = time.time() - start
+                print(f'Autoencoder took {ae_sec_elapsed:.1f} sec')
+
+                if freeze_autoencoder:
+                    autoencoder.set_frozen(True)
+
             result = train(model, optimizer, train_data, val_data, use_cuda, batch_size, num_epochs,
                            epoch_patience=epoch_patience)
             best_acc_epoch_idx, model, train_losses, val_losses, train_accuracies, val_accuracies = result
