@@ -27,9 +27,9 @@ from src.utils import dict_of_lists_to_list_of_dicts
 from src.utiq import UTIQ
 from src.train_test import train, test, train_autoencoder
 
-def train_e2e(hyperparams, use_cuda=True, verbose=True, plot=False):
+def train_e2e(hyperparams, use_cuda=False, verbose=True, plot=False):
     torch.manual_seed(123)
-
+    use_cuda=False
     train_data = SandiaDataProvider(which_set='train',
                                     dataset_home='../datasets/sandia/',
                                     img_size=28)
@@ -193,7 +193,7 @@ if __name__ == '__main__':
     prop = float(sys.argv[3])
     hypers_list = np.random.choice(hypers_list, int(prop * len(hypers_list)), replace=False)
 
-    use_cuda = torch.cuda.is_available()
+    use_cuda = False
     print(f'Use CUDA: {use_cuda}')
 
     print('Starting training')
