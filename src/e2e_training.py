@@ -172,10 +172,12 @@ if __name__ == '__main__':
     hypers_list = np.random.choice(hypers_list, int(prop * len(hypers_list)), replace=False)
 
     use_cuda = torch.cuda.is_available()
+    print(f'Use CUDA: {use_cuda}')
 
+    print('Starting training')
     for i, (h, m) in enumerate(train_e2e(hypers_list, use_cuda=use_cuda)):
         if h is not None and save:
-            with open(os.path.join(folder, f'{i}.json'), 'w+') as fp:
+            with open(os.path.join(folder, f'{num_models + i}.json'), 'w+') as fp:
                 json.dump(h, fp, indent=2)
             if m is not None:
-                torch.save(m.state_dict(), os.path.join(best_models_folder, f'{i}.sd'))
+                torch.save(m.state_dict(), os.path.join(best_models_folder, f'{num_models + i}.sd'))
